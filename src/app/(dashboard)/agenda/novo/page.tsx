@@ -33,10 +33,8 @@ export default async function NewAppointmentPage({ searchParams }: {
           <p role="alert" className={`${styles.error} mt-4`}>Não foi possível carregar os cadastros. Atualize a página e tente novamente.</p>
         ) : professionals.length === 0 ? (
           <p className={`${styles.muted} mt-4`}>Cadastre um <Link href="/servicos" className="inline-link">serviço ativo</Link> e vincule-o a um profissional ativo na <Link href="/equipe" className="inline-link">Equipe</Link>.</p>
-        ) : customers.rows.length ? (
-          <AppointmentForm key={day} professionals={professionals} customers={customers} day={day} today={today} />
         ) : (
-          <p className={`${styles.muted} mt-4`}>Cadastre um <Link href="/clientes/novo" className="inline-link">cliente</Link> para criar o primeiro agendamento.</p>
+          <AppointmentForm key={day} professionals={professionals} customers={customers} day={day} today={today} />
         )}
         {(professionals === null || !professionals.length || customers.failed || !customers.rows.length) && (
           <Link href={`/agenda?data=${day}`} className={`${styles.secondary} mt-4`}>Voltar à agenda</Link>

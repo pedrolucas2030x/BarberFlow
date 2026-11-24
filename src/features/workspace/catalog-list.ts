@@ -22,7 +22,8 @@ function namePattern(query: string) {
   return `%${query.replace(/[\\%_*]/g, (character) => `\\${character}`)}%`;
 }
 
-function displayPhone(phone: string) {
+function displayPhone(phone: string | null) {
+  if (phone === null) return "Sem telefone";
   return phone.replace(/^\+55(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
 }
 

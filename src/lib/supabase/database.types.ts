@@ -1,10 +1,25 @@
 export type WorkspaceRole = "owner" | "manager" | "barber";
 
+export type PaymentMethod = "pix" | "cash" | "debit" | "credit";
+
+export type ReceivedPaymentsDay = {
+  total_cents: number;
+  payments: {
+    appointment_id: string;
+    amount_cents: number;
+    method: PaymentMethod;
+    received_at: string;
+    starts_at: string;
+    service_name: string;
+    professional_name: string;
+  }[];
+};
+
 export type Appointment = {
   id: string;
   starts_at: string;
   ends_at: string;
-  status: "confirmed" | "canceled";
+  status: "confirmed" | "canceled" | "completed";
   service_name: string;
   professional_name: string;
   customer_name: string | null;
@@ -67,7 +82,7 @@ export type Database = {
       }, "active">;
       customers: RegistryTable<{
         name: string;
-        phone: string;
+        phone: string | null;
         marketing_consent: boolean;
       }, "marketing_consent">;
       professionals: RegistryTable<{
@@ -117,9 +132,32 @@ export type Database = {
         Args: { p_organization_id: string; p_appointment_id: string };
         Returns: boolean;
       };
+      book_with_customer_name: {
+        Args: {
+          p_organization_id: string; p_professional_id: string; p_service_id: string;
+          p_customer_name: string; p_customer_phone: string | null; p_starts_at: string;
+        };
+        Returns: string;
+      };
       list_appointments: {
         Args: { p_organization_id: string; p_day: string };
         Returns: Appointment[];
+      };
+      list_appointments_with_payments: {
+        Args: { p_organization_id: string; p_day: string };
+        Returns: (Appointment & { is_paid: boolean | null; can_complete: boolean })[];
+      };
+      complete_appointment: {
+        Args: { p_organization_id: string; p_appointment_id: string };
+        Returns: boolean;
+      };
+      record_appointment_payment: {
+        Args: { p_organization_id: string; p_appointment_id: string; p_method: PaymentMethod };
+        Returns: undefined;
+      };
+      received_payments_day: {
+        Args: { p_organization_id: string; p_day: string };
+        Returns: ReceivedPaymentsDay;
       };
     };
     Enums: { membership_role: WorkspaceRole };

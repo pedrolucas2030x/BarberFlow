@@ -35,7 +35,8 @@
 
 ## 5. Financeiro
 
-- [ ] Registrar pagamentos, despesas e comissões com idempotência e histórico.
+- [x] Concluir atendimentos e registrar pagamentos recebidos sem duplicidade.
+- [ ] Registrar despesas e calcular comissões.
 - [ ] Alimentar o painel com indicadores calculados a partir dos registros reais e testar os totais.
 
 ## 6. Piloto

@@ -315,6 +315,42 @@ test("proprietário cria e cancela um agendamento pelo formulário", async () =>
   }
 });
 
+test("concluir atendimento mantém o pagamento pendente até registrar o recebimento", async () => {
+  const cookie = await fixture.makeCookie("owner");
+  const organizationId = fixture.catalogs.professionals[0].organization_id;
+  const booking = {
+    id: "60000000-0000-4000-8000-000000000001", organization_id: organizationId,
+    starts_at: "2026-01-03T14:00:00Z", ends_at: "2026-01-03T14:30:00Z",
+    status: "confirmed", service_name: "Corte para recebimento", professional_name: "Profissional Alfa",
+    customer_name: "Cliente Alfa", price_cents: 5000,
+  };
+  fixture.appointments.push(booking);
+  const path = "/agenda?data=2026-01-03";
+
+  try {
+    await assertRedirect(await submitCatalogForm(path, cookie, "completion", { completion: booking.id }), "/agenda");
+    const completed = await (await getAs("owner", path)).text();
+    assert.match(completed, /Concluído/);
+    assert.match(completed, /Pagamento pendente/);
+    assert.match(await (await getAs("owner", "/financeiro")).text(), /Nenhum pagamento recebido nesta data/);
+
+    const payment = await submitCatalogForm(path, cookie, "payment", { payment: booking.id, method: "pix" });
+    assert.match(payment.headers.get("location"), /resultado=recebido/);
+    await assertRedirect(payment, "/agenda");
+    const paid = await (await getAs("owner", path)).text();
+    assert.match(paid, />Pago</);
+    assert.doesNotMatch(paid, /Confirmar recebimento/);
+
+    const ledger = await (await getAs("owner", "/financeiro")).text();
+    assert.match(ledger, /Corte para recebimento/);
+    assert.match(ledger, /Pix/);
+    assert.match(ledger, /R\$\s*50,00/);
+    assert.doesNotMatch(await (await getAs("manager", "/financeiro")).text(), /Corte para recebimento/);
+  } finally {
+    fixture.appointments.splice(fixture.appointments.indexOf(booking), 1);
+  }
+});
+
 test("catálogos administrativos mostram somente os registros do estabelecimento da sessão", async () => {
   const [services, customers, team] = await Promise.all([
     getAs("owner", "/servicos"), getAs("owner", "/clientes"), getAs("manager", "/equipe"),

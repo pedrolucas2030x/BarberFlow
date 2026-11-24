@@ -18,7 +18,7 @@ export type AppointmentCustomers = Awaited<ReturnType<typeof getAppointmentCusto
 
 export async function listAppointments(organizationId: string, day: string) {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("list_appointments", { p_organization_id: organizationId, p_day: day });
+  const { data } = await supabase.rpc("list_appointments_with_payments", { p_organization_id: organizationId, p_day: day });
   return data;
 }
 

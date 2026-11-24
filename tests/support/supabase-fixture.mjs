@@ -133,21 +133,46 @@ export async function startSupabaseFixture() {
     }
 
     const appointmentAction = url.pathname.match(/^\/rest\/v1\/rpc\/(list|create|cancel)_appointments?$/)?.[1];
-    if (request.method === "POST" && appointmentAction) {
+    const paidAgenda = url.pathname === "/rest/v1/rpc/list_appointments_with_payments";
+    const complete = url.pathname === "/rest/v1/rpc/complete_appointment";
+    const recordPayment = url.pathname === "/rest/v1/rpc/record_appointment_payment";
+    const finances = url.pathname === "/rest/v1/rpc/received_payments_day";
+    if (request.method === "POST" && (appointmentAction || paidAgenda || complete || recordPayment || finances)) {
       const args = await readJson(request);
       const organization = account.membership?.organizations;
       if (!organization || args.p_organization_id !== organization.id) return send(403, { code: "42501" });
-      if (appointmentAction === "list") {
-        const date = new Intl.DateTimeFormat("sv-SE", { timeZone: organization.timezone, dateStyle: "short" });
-        return send(200, appointments.filter((row) => row.organization_id === organization.id
-          && account.membership.role !== "barber" && date.format(new Date(row.starts_at)) === args.p_day));
-      }
+      const date = new Intl.DateTimeFormat("sv-SE", { timeZone: organization.timezone, dateStyle: "short" });
+      const ownRows = appointments.filter((row) => row.organization_id === organization.id);
+      if (appointmentAction === "list" || paidAgenda) return send(200, ownRows
+        .filter((row) => account.membership.role !== "barber" && date.format(new Date(row.starts_at)) === args.p_day)
+        .map((row) => ({
+          ...row, is_paid: Boolean(row.receipt),
+          can_complete: row.status === "confirmed" && Date.parse(row.starts_at) <= Date.now(),
+        })));
       if (account.membership.role === "barber") return send(403, { code: "42501" });
+      const appointment = ownRows.find(({ id }) => id === args.p_appointment_id);
+      if (complete) {
+        if (!appointment || appointment.status === "canceled" || Date.parse(appointment.starts_at) > Date.now()) return send(200, false);
+        appointment.status = "completed";
+        return send(200, true);
+      }
+      if (recordPayment) {
+        if (appointment?.status !== "completed" || appointment.price_cents <= 0) return send(400, { code: "BF011" });
+        if (appointment.receipt && appointment.receipt.method !== args.p_method) return send(400, { code: "BF012" });
+        appointment.receipt ??= { amount_cents: appointment.price_cents, method: args.p_method, received_at: new Date().toISOString() };
+        return send(200, null);
+      }
+      if (finances) {
+        const payments = ownRows.filter(({ receipt }) => receipt && date.format(new Date(receipt.received_at)) === args.p_day)
+          .map(({ id, receipt, starts_at, service_name, professional_name }) => ({
+            appointment_id: id, ...receipt, starts_at, service_name, professional_name,
+          }));
+        return send(200, { total_cents: payments.reduce((sum, row) => sum + row.amount_cents, 0), payments });
+      }
       if (appointmentAction === "cancel") {
-        const row = appointments.find(({ id, organization_id, status }) => id === args.p_appointment_id
-          && organization_id === organization.id && status === "confirmed");
-        if (row) row.status = "canceled";
-        return send(200, Boolean(row));
+        if (appointment?.status !== "confirmed") return send(200, false);
+        appointment.status = "canceled";
+        return send(200, true);
       }
       const service = catalogs.services.find(({ id, organization_id }) => id === args.p_service_id && organization_id === organization.id);
       const professional = catalogs.professionals.find(({ id, organization_id }) => id === args.p_professional_id && organization_id === organization.id);

@@ -9,7 +9,7 @@ import { deleteCustomer, saveCustomer, type CustomerFormState } from "@/features
 type Customer = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   marketing_consent: boolean;
 };
 

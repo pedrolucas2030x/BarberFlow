@@ -1,6 +1,6 @@
 begin;
 
-select '1..14';
+select '1..16';
 
 create function pg_temp.check_test(passed boolean, number integer, description text)
 returns text language plpgsql as $$
@@ -109,5 +109,19 @@ delete from public.customers where id = '66000000-0000-4000-8000-000000000001';
 select pg_temp.check_test((select count(*) = 4 and count(customer_name) = 0
   from public.list_appointments('62000000-0000-4000-8000-000000000001', pg_temp.booking_day())),
   14, 'exclusão de cliente preserva agenda sem reter o nome');
+
+select public.book_with_customer_name('62000000-0000-4000-8000-000000000001',
+  '64000000-0000-4000-8000-000000000001', '65000000-0000-4000-8000-000000000001',
+  'Cliente sem telefone', null, (pg_temp.booking_day() + time '16:30') at time zone 'America/Fortaleza');
+
+select pg_temp.check_test((select count(*) = 1
+  from public.list_appointments('62000000-0000-4000-8000-000000000001', pg_temp.booking_day())
+  where customer_name = 'Cliente sem telefone'), 15, 'agenda com nome e sem telefone');
+select pg_temp.check_test(pg_temp.has_sqlstate($$select public.book_with_customer_name(
+  '62000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001',
+  '65000000-0000-4000-8000-000000000001', 'Cliente não gravado', null,
+  (pg_temp.booking_day() + time '16:30') at time zone 'America/Fortaleza')$$, '23P01')
+  and not exists (select 1 from public.customers where name = 'Cliente não gravado'),
+  16, 'conflito reverte o cadastro do cliente');
 
 rollback;

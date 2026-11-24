@@ -32,7 +32,7 @@ const features = [
   {
     icon: Wallet,
     title: "Agenda e caixa",
-    description: "Crie e acompanhe agendamentos na agenda interna. Pagamentos, despesas e comissões estão em desenvolvimento.",
+    description: "Crie agendamentos e registre os pagamentos recebidos pelos atendimentos. Despesas e comissões estão em desenvolvimento.",
   },
 ];
 
