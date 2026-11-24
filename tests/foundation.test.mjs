@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { after, before, test } from "node:test";
@@ -149,7 +149,7 @@ test("formulário de login avisa e fica desabilitado sem Supabase", async () => 
   assert.match(html, /<button[^>]*type="submit"[^>]*disabled/);
 });
 
-for (const path of ["/painel", "/agenda", "/clientes", "/servicos", "/equipe", "/financeiro", "/configuracoes", "/onboarding"]) {
+for (const path of ["/painel", "/agenda", "/agenda/novo", "/clientes", "/servicos", "/equipe", "/financeiro", "/configuracoes", "/onboarding"]) {
   test(`${path} exige sessão`, async () => {
     await assertRedirect(await fetch(`${baseUrl}${path}`, { redirect: "manual" }), "/login");
   });
@@ -165,7 +165,7 @@ test("sessões simultâneas recebem seus próprios dados de estabelecimento", as
   assert.match(ownerPage, /Estabelecimento Alfa/);
   assert.doesNotMatch(ownerPage, /Estabelecimento Beta/);
   assert.match(ownerPage, /Cadastros iniciais concluídos/);
-  assert.match(ownerPage, /Agenda e financeiro/);
+  assert.match(ownerPage, /Abrir agenda/);
   assert.match(ownerPage, /<time datetime="\d{4}-\d{2}-\d{2}">/i);
   assert.match(managerPage, /Estabelecimento Beta/);
   assert.doesNotMatch(managerPage, /Estabelecimento Alfa/);
@@ -283,6 +283,37 @@ async function submitCatalogForm(path, cookie, field, values) {
     method: "POST", headers: { cookie, origin: baseUrl }, body, redirect: "manual", signal: AbortSignal.timeout(7000),
   }).catch((error) => { throw new Error(`POST ${path} (${field}) falhou.`, { cause: error }); });
 }
+
+test("proprietário cria e cancela um agendamento pelo formulário", async () => {
+  const cookie = await fixture.makeCookie("owner");
+  const { service, professional, customer } = fixture.catalogIds;
+  const organizationId = fixture.catalogs.professionals.find(({ id }) => id === professional).organization_id;
+  const link = { organization_id: organizationId, professional_id: professional, service_id: service };
+  const day = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+  fixture.catalogs.professional_services.push(link);
+
+  try {
+    await assertRedirect(await getAs("barber", "/agenda/novo"), "/agenda");
+    const saved = await submitCatalogForm(`/agenda/novo?data=${day}`, cookie, "customer", {
+      professional, service, customer, date: day, time: "09:15",
+    });
+    await assertRedirect(saved, "/agenda");
+    const booking = fixture.appointments.at(-1);
+    assert.equal(booking.starts_at, `${day}T14:15:00.000Z`);
+    const agenda = `/agenda?data=${day}`;
+    const html = await (await getAs("owner", agenda)).text();
+    assert.match(html, /Corte Alfa.*Cliente Alfa/);
+    assert.match(html, /09:15/);
+    const other = await (await getAs("manager", agenda)).text();
+    assert.doesNotMatch(other, /Cliente Alfa/);
+    await assertRedirect(await submitCatalogForm(agenda, cookie, "appointment", { appointment: booking.id, confirm: "on" }), "/agenda");
+    assert.equal(booking.status, "canceled");
+    assert.match(await (await getAs("owner", agenda)).text(), /Cancelado/);
+  } finally {
+    fixture.appointments.length = 0;
+    fixture.catalogs.professional_services.splice(fixture.catalogs.professional_services.indexOf(link), 1);
+  }
+});
 
 test("catálogos administrativos mostram somente os registros do estabelecimento da sessão", async () => {
   const [services, customers, team] = await Promise.all([

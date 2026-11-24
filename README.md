@@ -1,8 +1,8 @@
-﻿# BarberFlow
+# BarberFlow
 
 **Seu negócio. No controle.**
 
-Micro-SaaS para barbearias de 1 a 5 profissionais. O projeto inclui landing comercial, acesso por e-mail, cadastro da barbearia, painel administrativo e cadastros de serviços, clientes, profissionais e expediente. Agenda e financeiro estão em desenvolvimento. A oferta exibida na landing é uma proposta para o piloto, com 14 dias de teste previstos.
+Micro-SaaS para barbearias de 1 a 5 profissionais. O projeto inclui landing comercial, acesso por e-mail, cadastro da barbearia, serviços, clientes, profissionais, expediente e agenda interna. A oferta exibida na landing é uma proposta para o piloto, com 14 dias de teste previstos.
 
 ## Rodar o site
 
@@ -77,6 +77,7 @@ Os testes em `supabase/tests/` cobrem permissões e integridade no PostgreSQL, i
 - `src/app/(marketing)` atende a página pública. `src/app/(auth)` e `src/app/auth/confirm` concentram acesso e confirmação de links. O GET de confirmação guarda o token temporariamente, e o envio do formulário consome o token.
 - `src/app/(setup)` conduz o onboarding. A RPC `create_organization` grava o estabelecimento e o vínculo de proprietário na mesma transação e serializa requisições simultâneas da mesma conta.
 - `src/app/(dashboard)` reúne as rotas com sessão obrigatória. Proprietários e gestores acessam `/painel`, e profissionais têm acesso à rota da agenda. A aplicação verifica o vínculo e o papel no servidor, e o banco aplica RLS.
+- Para criar o primeiro agendamento, cadastre um cliente, vincule um serviço a um profissional ativo, configure o turno no Expediente e abra **Agenda → Novo agendamento**. A agenda diária usa o fuso da barbearia. A migração de agendamentos usa `btree_gist` para impedir horários sobrepostos, mantém o histórico de cancelamentos e registra o preço e percentual de comissão do momento da reserva.
 - `src/lib/supabase` contém a configuração e o cliente SSR. `src/proxy.ts` atualiza os cookies de sessão e desabilita o cache nas rotas autenticadas.
 - Nesta fase, uma conta sem vínculo pode cadastrar um estabelecimento. A troca entre estabelecimentos e o convite de profissionais pertencem a etapas futuras.
 

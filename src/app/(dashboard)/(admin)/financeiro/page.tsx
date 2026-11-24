@@ -14,8 +14,8 @@ export default async function FinancesPage() {
       title={label}
       icon={icon}
       description="Acompanhe recebimentos, despesas e comissões."
-      emptyTitle="Nenhum lançamento para exibir"
-      emptyDescription="As movimentações vão aparecer aqui quando o caixa estiver disponível."
+      emptyTitle="Financeiro em desenvolvimento"
+      emptyDescription="O registro de pagamentos, despesas e comissões estará disponível em uma próxima etapa."
     />
   );
 }

@@ -59,6 +59,7 @@ async function readJson(request) {
 export async function startSupabaseFixture() {
   const log = [];
   const catalogs = createCatalogFixtures();
+  const appointments = [];
   const users = new Map();
   const tokens = new Map();
   const accounts = [
@@ -131,6 +132,37 @@ export async function startSupabaseFixture() {
       return send(200, account.membership.organizations.id);
     }
 
+    const appointmentAction = url.pathname.match(/^\/rest\/v1\/rpc\/(list|create|cancel)_appointments?$/)?.[1];
+    if (request.method === "POST" && appointmentAction) {
+      const args = await readJson(request);
+      const organization = account.membership?.organizations;
+      if (!organization || args.p_organization_id !== organization.id) return send(403, { code: "42501" });
+      if (appointmentAction === "list") {
+        const date = new Intl.DateTimeFormat("sv-SE", { timeZone: organization.timezone, dateStyle: "short" });
+        return send(200, appointments.filter((row) => row.organization_id === organization.id
+          && account.membership.role !== "barber" && date.format(new Date(row.starts_at)) === args.p_day));
+      }
+      if (account.membership.role === "barber") return send(403, { code: "42501" });
+      if (appointmentAction === "cancel") {
+        const row = appointments.find(({ id, organization_id, status }) => id === args.p_appointment_id
+          && organization_id === organization.id && status === "confirmed");
+        if (row) row.status = "canceled";
+        return send(200, Boolean(row));
+      }
+      const service = catalogs.services.find(({ id, organization_id }) => id === args.p_service_id && organization_id === organization.id);
+      const professional = catalogs.professionals.find(({ id, organization_id }) => id === args.p_professional_id && organization_id === organization.id);
+      const customer = catalogs.customers.find(({ id, organization_id }) => id === args.p_customer_id && organization_id === organization.id);
+      if (!service || !professional || !customer) return send(400, { code: "BF002" });
+      const row = {
+        id: randomUUID(), organization_id: organization.id, starts_at: args.p_starts_at,
+        ends_at: new Date(Date.parse(args.p_starts_at) + service.duration_minutes * 60_000).toISOString(),
+        status: "confirmed", service_name: service.name, professional_name: professional.name,
+        customer_name: customer.name, price_cents: service.price_cents,
+      };
+      appointments.push(row);
+      return send(200, row.id);
+    }
+
     const table = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/)?.[1];
     if (table && Object.hasOwn(catalogs, table)) {
       const membership = account.membership;
@@ -192,6 +224,7 @@ export async function startSupabaseFixture() {
     url,
     publishableKey,
     log,
+    appointments,
     catalogs,
     catalogIds,
     async makeCookie(handle) {

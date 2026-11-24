@@ -1,5 +1,16 @@
 export type WorkspaceRole = "owner" | "manager" | "barber";
 
+export type Appointment = {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  status: "confirmed" | "canceled";
+  service_name: string;
+  professional_name: string;
+  customer_name: string | null;
+  price_cents: number | null;
+};
+
 type Organization = {
   id: string;
   name: string;
@@ -91,6 +102,24 @@ export type Database = {
       create_organization: {
         Args: { p_name: string; p_slug: string; p_timezone: string };
         Returns: string;
+      };
+      create_appointment: {
+        Args: {
+          p_organization_id: string;
+          p_professional_id: string;
+          p_service_id: string;
+          p_customer_id: string;
+          p_starts_at: string;
+        };
+        Returns: string;
+      };
+      cancel_appointment: {
+        Args: { p_organization_id: string; p_appointment_id: string };
+        Returns: boolean;
+      };
+      list_appointments: {
+        Args: { p_organization_id: string; p_day: string };
+        Returns: Appointment[];
       };
     };
     Enums: { membership_role: WorkspaceRole };

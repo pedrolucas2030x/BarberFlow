@@ -1,4 +1,4 @@
-﻿import { ArrowRight, CircleCheck } from "lucide-react";
+import { ArrowRight, CircleCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { navigation } from "@/components/dashboard/navigation-items";
@@ -68,8 +68,11 @@ export default async function DashboardPage() {
       </section>
 
       <section className={`panel ${styles.modules}`} aria-labelledby="operational-modules">
-        <h2 id="operational-modules">Agenda e financeiro</h2>
-        <p>Em desenvolvimento</p>
+        <h2 id="operational-modules">Agenda</h2>
+        <p>Consulte os horários e registre agendamentos para a equipe.</p>
+        <Link href="/agenda" className={`${completed === steps.length ? "primary-button" : controls.secondary} mt-3`}>
+          Abrir agenda <ArrowRight size={15} aria-hidden="true" />
+        </Link>
       </section>
     </>
   );

@@ -134,6 +134,10 @@ body {
   .date-chip svg { display: none; }
 }
 
+@media (max-width: 23rem) {
+  .topbar .date-chip { display: none; }
+}
+
 .dashboard-content {
   display: grid;
   gap: 1.5rem;

@@ -32,7 +32,7 @@ const features = [
   {
     icon: Wallet,
     title: "Agenda e caixa",
-    description: "Agendamentos, pagamentos recebidos, despesas e cálculo de comissões estão em desenvolvimento.",
+    description: "Crie e acompanhe agendamentos na agenda interna. Pagamentos, despesas e comissões estão em desenvolvimento.",
   },
 ];
 
@@ -103,7 +103,7 @@ export default function LandingPage() {
           <div className={styles.container}>
             <div className={styles.sectionIntro}>
               <h2 id="features-title">Da agenda ao caixa.</h2>
-              <p id="features-description">As primeiras ferramentas do painel ajudam a preparar sua barbearia para a agenda.</p>
+              <p id="features-description">Configure os serviços e o expediente da equipe para começar a agendar.</p>
             </div>
             <ul className={styles.features}>
               {features.map(({ icon: Icon, title, description }) => (

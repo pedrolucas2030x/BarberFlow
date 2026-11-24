@@ -29,8 +29,9 @@
 
 ## 4. Agenda
 
-- [ ] Entregar visões diária e semanal, criação manual, cancelamento e agendamento público com proteção contra abuso.
-- [ ] Verificar concorrência, indisponibilidade e fuso horário.
+- [x] Implementar agenda diária, criação manual e cancelamento com histórico.
+- [ ] Entregar visão semanal e agendamento público com proteção contra abuso.
+- [ ] Validar o fluxo completo no Supabase de teste, incluindo disponibilidade e fuso horário.
 
 ## 5. Financeiro
 

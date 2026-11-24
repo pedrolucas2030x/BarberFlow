@@ -3,7 +3,7 @@
 import { Ellipsis, Scissors, Store } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { navigation } from "./navigation-items";
 
 type NavigationItem = (typeof navigation)[keyof typeof navigation];
@@ -41,6 +41,7 @@ export function DashboardNavigation({ organizationName, roleLabel, canManage }: 
 }) {
   const pathname = usePathname();
   const moreMenu = useRef<HTMLDivElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
   const home = canManage ? navigation.dashboard.href : navigation.schedule.href;
   const scheduleOnly = [navigation.schedule];
 
@@ -80,11 +81,19 @@ export function DashboardNavigation({ organizationName, roleLabel, canManage }: 
               className="nav-link"
               data-active={moreItems.some((item) => isCurrent(pathname, item.href)) ? "true" : undefined}
               popoverTarget="dashboard-more"
+              aria-controls="dashboard-more"
+              aria-expanded={moreOpen}
             >
               <Ellipsis size={19} aria-hidden="true" />
               <span>Mais</span>
             </button>
-            <div id="dashboard-more" popover="auto" className="mobile-popover" ref={moreMenu}>
+            <div
+              id="dashboard-more"
+              popover="auto"
+              className="mobile-popover"
+              ref={moreMenu}
+              onToggle={(event) => setMoreOpen(event.currentTarget.matches(":popover-open"))}
+            >
               {moreItems.map((item) => (
                 <NavigationLink
                   key={item.href}
