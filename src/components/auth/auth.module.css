@@ -1,0 +1,260 @@
+.shell {
+  display: grid;
+  min-height: 100dvh;
+  background: var(--background);
+}
+
+.visual {
+  display: none;
+}
+
+.main {
+  display: grid;
+  align-content: center;
+  justify-items: stretch;
+  gap: clamp(1.5rem, 5vh, 2.75rem);
+  min-width: 0;
+  max-width: 32rem;
+  width: 100%;
+  margin-inline: auto;
+  padding: clamp(1.25rem, 5vw, 2.25rem);
+}
+
+.brand {
+  min-height: 2.75rem;
+}
+
+.brandMark {
+  width: 2.375rem;
+  height: 2.375rem;
+}
+
+.card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.cardHeading {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.cardHeading h1 {
+  color: var(--foreground);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 740;
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+}
+
+.cardHeading p {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.cardFooter {
+  padding-top: 1.125rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.inlineLink {
+  display: inline-block;
+  min-height: 1.5rem;
+  color: var(--gold);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.inlineLink:hover {
+  color: #ebc655;
+}
+
+.form,
+.field {
+  display: grid;
+}
+
+.form {
+  gap: 1rem;
+}
+
+.field {
+  gap: 0.35rem;
+}
+
+.field label {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 620;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.labelRow a {
+  font-size: 0.8125rem;
+}
+
+.field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #515156;
+  border-radius: 0.625rem;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 1rem;
+  outline-offset: 2px;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: #d27771;
+}
+
+.field input:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.passwordInput {
+  position: relative;
+}
+
+.passwordInput input {
+  padding-inline-end: 3rem;
+}
+
+.togglePassword {
+  position: absolute;
+  inset: 0.125rem 0.125rem 0.125rem auto;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  border-radius: 0.5rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.togglePassword:hover {
+  color: var(--foreground);
+}
+
+.togglePassword:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.fieldHint,
+.fieldError {
+  margin-top: 0.15rem;
+  font-size: 0.8125rem;
+}
+
+.fieldHint {
+  color: var(--muted);
+}
+
+.fieldError {
+  color: #f7aaa4;
+}
+
+.submit {
+  min-height: 3rem;
+  margin-top: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.submit:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.form[aria-busy="true"] .submit:disabled {
+  cursor: wait;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1px solid #3a5d4a;
+  border-radius: 0.625rem;
+  background: #182720;
+  color: #c4e7cf;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.notice[data-status="error"] {
+  border-color: #633832;
+  background: #2d1c1a;
+  color: #ffd1cc;
+}
+
+.notice svg {
+  flex: none;
+  margin-top: 0.0625rem;
+}
+
+@media (min-width: 52rem) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .visual {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100dvh;
+    padding: clamp(2.75rem, 6vw, 5.75rem);
+    border-right: 1px solid var(--line);
+    background: #181411;
+  }
+
+  .visual::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    background: linear-gradient(0deg, #100d0bee 8%, #110d0c96 37%, #110d0c12 76%);
+  }
+
+  .photo {
+    z-index: -2;
+    object-fit: cover;
+    object-position: 71% center;
+  }
+
+  .visualContent {
+    display: grid;
+    gap: 1rem;
+    color: var(--foreground);
+    font-size: clamp(2rem, 4.15vw, 4.125rem);
+    font-weight: 750;
+    line-height: 1.05;
+    letter-spacing: -0.06em;
+  }
+
+  .visualContent span {
+    color: var(--gold);
+  }
+
+  .visualLine {
+    width: 2rem;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  .main {
+    padding: 2.75rem;
+  }
+}
