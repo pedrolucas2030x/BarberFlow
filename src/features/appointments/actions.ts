@@ -135,3 +135,29 @@ export async function recordAppointmentPayment(day: string, form: FormData) {
   revalidatePath("/financeiro");
   redirect(`${path}&resultado=recebido`);
 }
+
+export async function changeAppointment(day: string, form: FormData) {
+  const { organization } = await requireWorkspace();
+  const path = `/agenda?data=${appointmentDay(day) ?? todayForAppointments(organization.timezone)}`;
+  const parsed = z.object({
+    id: z.uuid(), expected: z.iso.datetime({ offset: true }),
+    action: z.enum(["reschedule", "confirm", "start", "complete", "no_show", "cancel"]),
+    reason: z.string().trim().max(280).nullable(),
+  }).safeParse({ id: form.get("change"), expected: form.get("expected"), action: form.get("operation"), reason: form.get("reason") });
+  if (!parsed.success) redirect(`${path}&resultado=erro_alteracao`);
+  const fields = parsed.data;
+  const date = form.get("date");
+  const time = form.get("time");
+  const conversion = fields.action === "reschedule"
+    ? tenantDateTimeToInstant(`${date}T${time}`, organization.timezone) : null;
+  if (conversion && "error" in conversion) redirect(`${path}&resultado=erro_alteracao`);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("change_appointment", {
+    p_organization_id: organization.id, p_appointment_id: fields.id, p_action: fields.action,
+    p_expected: fields.expected, p_starts_at: conversion?.instant ?? null, p_reason: fields.reason,
+  });
+  if (!data || error) redirect(`${path}&resultado=erro_alteracao`);
+  revalidatePath("/agenda");
+  revalidatePath("/painel");
+  redirect(`${conversion ? `/agenda?data=${date}` : path}&resultado=alterado`);
+}

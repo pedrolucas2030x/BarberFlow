@@ -19,7 +19,7 @@ export type Appointment = {
   id: string;
   starts_at: string;
   ends_at: string;
-  status: "confirmed" | "canceled" | "completed";
+  status: "pending" | "confirmed" | "in_progress" | "canceled" | "completed" | "no_show";
   service_name: string;
   professional_name: string;
   customer_name: string | null;
@@ -76,10 +76,11 @@ export type Database = {
       };
       services: RegistryTable<{
         name: string;
+        description: string | null;
         duration_minutes: number;
         price_cents: number;
         active: boolean;
-      }, "active">;
+      }, "active" | "description">;
       customers: RegistryTable<{
         name: string;
         phone: string | null;
@@ -88,9 +89,10 @@ export type Database = {
       professionals: RegistryTable<{
         membership_id: string | null;
         name: string;
+        specialties: string | null;
         active: boolean;
         commission_bps: number;
-      }, "membership_id" | "active" | "commission_bps">;
+      }, "membership_id" | "active" | "commission_bps" | "specialties">;
       professional_services: {
         Row: ProfessionalService & { created_at: string };
         Insert: ProfessionalService;
@@ -153,6 +155,21 @@ export type Database = {
       list_appointments_with_payments: {
         Args: { p_organization_id: string; p_day: string };
         Returns: (Appointment & { is_paid: boolean | null; can_complete: boolean })[];
+      };
+      appointments_period: {
+        Args: { p_organization_id: string; p_first: string; p_last: string };
+        Returns: (Appointment & { is_paid: boolean | null; can_complete: boolean; professional_id: string })[];
+      };
+      change_appointment: {
+        Args: {
+          p_organization_id: string; p_appointment_id: string; p_action: string;
+          p_expected: string; p_starts_at: string | null; p_reason: string | null;
+        };
+        Returns: boolean;
+      };
+      customer_history: {
+        Args: { p_organization_id: string; p_customer_id: string };
+        Returns: { completed: number; last_completed: string | null; items: Pick<Appointment, "id" | "starts_at" | "status" | "service_name">[] };
       };
       complete_appointment: {
         Args: { p_organization_id: string; p_appointment_id: string };

@@ -16,6 +16,7 @@ function toPriceCents(value: string) {
 }
 
 export const serviceFieldsSchema = z.object({
+  description: z.string().trim().max(280, "Use até 280 caracteres.").nullable().optional(),
   name: z.string({ error: "Informe o nome do serviço." }).trim()
     .refine((name) => [...name].length >= 2 && [...name].length <= 100, "Use de 2 a 100 caracteres.")
     .refine((name) => !/\p{Cc}/u.test(name), "Use um nome sem quebras de linha."),

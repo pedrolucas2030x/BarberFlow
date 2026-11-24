@@ -8,6 +8,7 @@ import { saveService, type ServiceFormState } from "@/features/services/actions"
 type Service = {
   id: string;
   name: string;
+  description: string | null;
   duration_minutes: number;
   price_cents: number;
   active: boolean;
@@ -19,6 +20,7 @@ const priceInput = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, ma
 export function ServiceForm({ service }: { service?: Service }) {
   const [state, formAction, pending] = useActionState(saveService, initialState);
   const [name, setName] = useState(service?.name ?? "");
+  const [description, setDescription] = useState(service?.description ?? "");
   const [duration, setDuration] = useState(service ? String(service.duration_minutes) : "");
   const [price, setPrice] = useState(service ? priceInput.format(service.price_cents / 100) : "");
   const [active, setActive] = useState(service?.active ?? true);
@@ -41,6 +43,12 @@ export function ServiceForm({ service }: { service?: Service }) {
         {nameError && <p id="service-name-error" className={styles.error} role="alert">{nameError}</p>}
       </div>
 
+      <div className={styles.field}>
+        <label htmlFor="service-description">Descrição (opcional)</label>
+        <textarea id="service-description" name="description" maxLength={280} value={description}
+          onChange={(event) => setDescription(event.currentTarget.value)} />
+        {state.errors?.description?.[0] && <p role="alert">{state.errors.description[0]}</p>}
+      </div>
       <div className={styles.fieldGrid}>
         <div className={styles.field}>
           <label htmlFor="service-duration">Duração (minutos)</label>

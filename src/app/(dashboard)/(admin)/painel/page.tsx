@@ -6,6 +6,8 @@ import controls from "@/components/dashboard/registry.module.css";
 import { requireWorkspace } from "@/features/workspace/access";
 import { getDashboardProgress } from "@/features/workspace/dashboard-progress";
 import styles from "./dashboard.module.css";
+import { listAppointments } from "@/features/appointments/data";
+import { todayForAppointments } from "@/features/appointments/dates";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -15,7 +17,13 @@ const steps = [
 
 export default async function DashboardPage() {
   const { organization } = await requireWorkspace();
-  const progress = await getDashboardProgress(organization.id);
+  const today = todayForAppointments(organization.timezone);
+  const [progress, appointments] = await Promise.all([
+    getDashboardProgress(organization.id),
+    listAppointments(organization.id, today),
+  ]);
+  const upcoming = appointments?.filter(({ status }) => status === "confirmed" || status === "pending").slice(0, 3);
+  const localTime = new Intl.DateTimeFormat("pt-BR", { timeStyle: "short", timeZone: organization.timezone });
   const completed = progress ? steps.filter(({ key }) => progress[key]).length : null;
   const next = progress ? steps.find(({ key }) => !progress[key])?.key : undefined;
 
@@ -68,6 +76,12 @@ export default async function DashboardPage() {
       <section className={`panel ${styles.modules}`} aria-labelledby="operational-modules">
         <h2 id="operational-modules">Agenda</h2>
         <p>Consulte seus horários e marque um atendimento.</p>
+        {appointments && <p>Atendimentos concluídos hoje: {appointments.filter(({ status }) => status === "completed").length}</p>}
+        {upcoming?.length ? <ul className={controls.list}>
+          {upcoming.map((item) => <li key={item.id}>
+            <time dateTime={item.starts_at}>{localTime.format(new Date(item.starts_at))}</time> · {item.service_name}
+          </li>)}
+        </ul> : appointments && <p>Nenhum atendimento pendente ou confirmado hoje.</p>}
         <Link href="/agenda" className={`${completed === steps.length ? "primary-button" : controls.secondary} mt-3`}>
           Abrir agenda <ArrowRight size={15} aria-hidden="true" />
         </Link>

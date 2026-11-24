@@ -15,7 +15,7 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
 
   const supabase = await createClient();
   const { data: service, error } = await supabase.from("services")
-    .select("id, name, duration_minutes, price_cents, active")
+    .select("id, name, description, duration_minutes, price_cents, active")
     .eq("organization_id", organization.id).eq("id", id).maybeSingle();
 
   if (error) throw new Error("Não foi possível consultar o serviço.");

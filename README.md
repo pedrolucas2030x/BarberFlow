@@ -79,6 +79,19 @@ Os testes em `supabase/tests/` cobrem permissões e integridade no PostgreSQL, i
 - `src/app/(dashboard)` reúne as rotas com sessão obrigatória. Proprietários e gestores acessam `/painel`, e profissionais têm acesso à rota da agenda. A aplicação verifica o vínculo e o papel no servidor, e o banco aplica RLS.
 - Para criar o primeiro agendamento, cadastre um cliente, vincule um serviço a um profissional ativo, configure o turno no Expediente e abra **Agenda → Novo agendamento**. A agenda diária usa o fuso da barbearia. A migração de agendamentos usa `btree_gist` para impedir horários sobrepostos, mantém o histórico de cancelamentos e registra o preço e percentual de comissão do momento da reserva.
 - Na Agenda, proprietários e gestores podem concluir um atendimento a partir do horário de início. Para registrar um recebimento, use **Registrar pagamento** no atendimento concluído e confirme a forma de pagamento. A migração de pagamentos permite um recebimento integral pelo preço da reserva e impede registros duplicados. Atendimentos de cortesia dispensam o registro de pagamento. A página Financeiro soma os pagamentos pela data do recebimento no fuso da barbearia.
+
+## Agenda pública e Fase 2
+
+Em um ambiente de teste, aplique as migrações na ordem dos arquivos. Configure `SUPABASE_BOOKING_SECRET` apenas no servidor com uma chave secreta do Supabase de teste que execute as funções com papel `service_role`. No Vercel, o servidor também aceita SUPABASE_SECRET_KEY fornecida pela integração com o Supabase do mesmo projeto. A página pública fica indisponível quando a configuração ou a verificação de limite falha.
+
+Em **Configurações**, abra a página de agendamento da barbearia. Para disponibilizar horários online, configure um turno e vincule pelo menos um serviço ativo a um profissional ativo em **Configurar profissionais e horários da reserva online**. A agenda manual solo continua permitindo horários sem turno cadastrado. Pausas e bloqueios continuam valendo na agenda manual.
+
+- `/agendar/[slug]` atende visitantes sem conta. A confirmação fica na própria tela. `POST /api/agendar/[slug]` recebe buscas de horários e confirmações com corpos de até 4 KiB e respostas sem cache.
+- Os horários públicos começam no futuro, em intervalos de 15 minutos, nos próximos 60 dias civis do estabelecimento. Horas repetidas são distinguidas pelo deslocamento UTC. A confirmação revalida a oferta, o horário completo e a disponibilidade. Reservas públicas confirmadas aparecem na agenda após atualizar a página.
+- O PostgreSQL limita buscas a 60/min por origem e 300/min por barbearia. Confirmações têm limite de 6/min por origem e 40/min por barbearia. No Vercel, a origem usa o IP encaminhado pela plataforma, com hash e sem armazenar o IP. Em outros ambientes, as requisições compartilham a origem. Registros do limitador expiram após um dia, e tentativas idempotentes após sete dias. A limpeza é oportunista.
+- A Agenda oferece dia, semana e mês. A página de edição do cliente inclui histórico e indicadores de atendimentos concluídos.
+
+Execute `npm run lint`, `npm run typecheck`, `npm run build`, `npm test` e os testes SQL em `supabase/tests`. A suíte HTTP usa um serviço de teste que simula a Data API. Veja [PROGRESS.md](PROGRESS.md) para resultados, cobertura e pendências.
 - `src/lib/supabase` contém a configuração e o cliente SSR. `src/proxy.ts` atualiza os cookies de sessão e desabilita o cache nas rotas autenticadas.
 - Nesta fase, uma conta sem vínculo pode cadastrar um estabelecimento. A troca entre estabelecimentos e o convite de profissionais pertencem a etapas futuras.
 

@@ -13,8 +13,10 @@ export async function saveProfessional(previous: TeamFormState, form: FormData):
   if (!parsed.success) return teamFormError(previous, "Revise os campos destacados.", z.flattenError(parsed.error).fieldErrors);
 
   const { id, name, commission } = parsed.data;
+  const specialties = z.string().trim().max(160).nullable().safeParse(form.get("specialties"));
+  if (!specialties.success) return teamFormError(previous, "Informe até 160 caracteres nas especialidades.");
   const supabase = await createClient();
-  const values = { name, commission_bps: commission };
+  const values = { name, commission_bps: commission, specialties: specialties.data || null };
   const query = id
     ? supabase.from("professionals").update(values).eq("organization_id", organization.id).eq("id", id)
     : supabase.from("professionals").insert({ ...values, organization_id: organization.id });

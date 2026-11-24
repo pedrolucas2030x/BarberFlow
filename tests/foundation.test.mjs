@@ -46,7 +46,8 @@ async function startApp(environment) {
 before(async () => {
   fixture = await startSupabaseFixture();
   [baseUrl, unconfiguredUrl] = await Promise.all([
-    startApp({ NEXT_PUBLIC_SUPABASE_URL: fixture.url, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture.publishableKey }),
+    startApp({ NEXT_PUBLIC_SUPABASE_URL: fixture.url, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture.publishableKey,
+      SUPABASE_BOOKING_SECRET: fixture.bookingKey }),
     startApp({ NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "" }),
   ]);
 });
@@ -312,6 +313,32 @@ test("proprietário cria e cancela um agendamento pelo formulário", async () =>
   } finally {
     fixture.appointments.length = 0;
     fixture.catalogs.professional_services.splice(fixture.catalogs.professional_services.indexOf(link), 1);
+  }
+});
+
+test("reserva sem sessão devolve resumo e aparece na agenda do titular", async () => {
+  const slug = "estabelecimento-alfa";
+  const day = "2027-01-15";
+  const fields = { service: fixture.catalogIds.service, professional: fixture.catalogIds.professional, day };
+  const post = (body) => fetch(`${baseUrl}/api/agendar/${slug}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  assert.match(await (await fetch(`${baseUrl}/agendar/${slug}`)).text(), /Buscar horários/);
+  assert.equal((await post({ kind: "reserve" })).status, 422);
+  const slots = await post({ kind: "slots", ...fields });
+  assert.deepEqual(await slots.json(), { slots: [`${day}T14:00:00Z`] });
+  try {
+    const result = await post({ ...fields, kind: "reserve", start: `${day}T14:00:00Z`, name: "Cliente público",
+      phone: "(86) 99111-0000", attempt: "82000000-0000-4000-8000-000000000001", price: 5000, minutes: 30 });
+    assert.equal(result.status, 200);
+    assert.match(result.headers.get("cache-control"), /no-store/);
+    const receipt = await result.json();
+    assert.equal(receipt.status, "confirmed");
+    assert.equal(Object.hasOwn(receipt, "phone"), false);
+    assert.match(await (await getAs("owner", `/agenda?data=${day}`)).text(), /Cliente público/);
+    assert.doesNotMatch(await (await getAs("manager", `/agenda?data=${day}`)).text(), /Cliente público/);
+  } finally {
+    fixture.appointments.length = 0;
   }
 });
 

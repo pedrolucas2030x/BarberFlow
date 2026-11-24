@@ -28,3 +28,9 @@ export async function listAppointments(organizationId: string, day: string) {
   const { data } = await supabase.rpc("list_appointments_with_payments", { p_organization_id: organizationId, p_day: day });
   return data;
 }
+
+export async function listAppointmentPeriod(organizationId: string, first: string, last: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("appointments_period", { p_organization_id: organizationId, p_first: first, p_last: last });
+  return data;
+}

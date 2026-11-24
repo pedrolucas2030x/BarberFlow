@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function listProfessionals(organizationId: string) {
   const supabase = await createClient();
-  return supabase.from("professionals").select("id, name, commission_bps, active")
+  return supabase.from("professionals").select("id, name, specialties, commission_bps, active")
     .eq("organization_id", organizationId)
     .order("active", { ascending: false }).order("name").order("id");
 }

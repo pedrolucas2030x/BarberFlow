@@ -4,6 +4,7 @@ import { once } from "node:events";
 import { createServer } from "node:http";
 
 const publishableKey = "sb_publishable_barberflow_http_fixture";
+const bookingKey = "sb_secret_barberflow_http_fixture";
 const signingKey = "fixture-signing-key-only-for-node-tests";
 const mainOrg = {
   id: "10000000-0000-4000-8000-000000000001",
@@ -114,6 +115,28 @@ export async function startSupabaseFixture() {
       return send(200, { id: randomUUID(), email, aud: "authenticated", app_metadata: {}, user_metadata: {} });
     }
 
+    if (request.headers.apikey === bookingKey && request.method === "POST") {
+      const args = await readJson(request);
+      if (url.pathname === "/rest/v1/rpc/public_catalog") {
+        return send(200, args.p_slug === mainOrg.slug ? {
+          name: mainOrg.name, timezone: mainOrg.timezone,
+          offers: [{ service: catalogIds.service, professional: catalogIds.professional,
+            name: "Corte Alfa", professionalName: "Profissional Alfa", minutes: 30, price: 5000 }],
+        } : null);
+      }
+      if (url.pathname === "/rest/v1/rpc/public_booking") {
+        if (!args.p_attempt) return send(200, { slots: [`${args.p_day}T14:00:00Z`] });
+        if (args.p_phone !== "+5586991110000") return send(200, { error: "invalid" });
+        const appointment = {
+          id: randomUUID(), organization_id: mainOrg.id, status: "confirmed", starts_at: args.p_start,
+          ends_at: new Date(Date.parse(args.p_start) + 30 * 60_000).toISOString(),
+          service_name: "Corte Alfa", professional_name: "Profissional Alfa", customer_name: args.p_name, price_cents: 5000,
+        };
+        appointments.push(appointment);
+        return send(200, { status: "confirmed", name: mainOrg.name, service: appointment.service_name,
+          professional: appointment.professional_name, start: appointment.starts_at, timezone: mainOrg.timezone, price: 5000 });
+      }
+    }
     if (!account) return send(401, { code: "bad_jwt", message: "Invalid session" });
     if (url.pathname === "/auth/v1/user") return send(200, account.user);
     if (url.pathname === "/rest/v1/memberships") {
@@ -134,20 +157,25 @@ export async function startSupabaseFixture() {
 
     const appointmentAction = url.pathname.match(/^\/rest\/v1\/rpc\/(list|create|cancel)_appointments?$/)?.[1];
     const paidAgenda = url.pathname === "/rest/v1/rpc/list_appointments_with_payments";
+    const periodAgenda = url.pathname === "/rest/v1/rpc/appointments_period";
     const soloBooking = url.pathname === "/rest/v1/rpc/book_solo_appointment";
     const complete = url.pathname === "/rest/v1/rpc/complete_appointment";
     const recordPayment = url.pathname === "/rest/v1/rpc/record_appointment_payment";
     const finances = url.pathname === "/rest/v1/rpc/received_payments_day";
-    if (request.method === "POST" && (appointmentAction || soloBooking || paidAgenda || complete || recordPayment || finances)) {
+    if (request.method === "POST" && (appointmentAction || soloBooking || paidAgenda || periodAgenda || complete || recordPayment || finances)) {
       const args = await readJson(request);
       const organization = account.membership?.organizations;
       if (!organization || args.p_organization_id !== organization.id) return send(403, { code: "42501" });
       const date = new Intl.DateTimeFormat("sv-SE", { timeZone: organization.timezone, dateStyle: "short" });
       const ownRows = appointments.filter((row) => row.organization_id === organization.id);
-      if (appointmentAction === "list" || paidAgenda) return send(200, ownRows
-        .filter((row) => account.membership.role !== "barber" && date.format(new Date(row.starts_at)) === args.p_day)
+      if (appointmentAction === "list" || paidAgenda || periodAgenda) return send(200, ownRows
+        .filter((row) => {
+          const day = date.format(new Date(row.starts_at));
+          return account.membership.role !== "barber" &&
+            (periodAgenda ? day >= args.p_first && day <= args.p_last : day === args.p_day);
+        })
         .map((row) => ({
-          ...row, is_paid: Boolean(row.receipt),
+          ...row, professional_id: catalogIds.professional, is_paid: Boolean(row.receipt),
           can_complete: row.status === "confirmed" && Date.parse(row.starts_at) <= Date.now(),
         })));
       if (account.membership.role === "barber") return send(403, { code: "42501" });
@@ -250,6 +278,7 @@ export async function startSupabaseFixture() {
   return {
     url,
     publishableKey,
+    bookingKey,
     log,
     appointments,
     catalogs,

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+const scheduleConflict = "Há um agendamento nesse horário. Reagende ou cancele antes de mudar o expediente.";
 import { teamFormError, teamFormSuccess, type TeamFormState } from "@/features/professionals/form-state";
 import { requireWorkspace } from "@/features/workspace/access";
 import { isSupportedTimeZone } from "@/lib/app-time-zone";
@@ -92,7 +94,7 @@ export async function saveWeeklyShift(previous: TeamFormState, form: FormData): 
   const { data, error } = await query.select("id").maybeSingle();
 
   if (error?.code === "23505") return teamFormError(previous, "Já existe um turno para esse dia.", { weekday: ["Selecione outro dia."] });
-  if (error) return teamFormError(previous, "Não foi possível salvar o turno. Tente novamente.");
+  if (error) return teamFormError(previous, error.code === "BF030" ? scheduleConflict : "Não foi possível salvar o turno. Tente novamente.");
   if (!data) return teamFormError(previous, "Turno indisponível para edição.");
   return scheduleSaved(previous, professionalId, id ? "Turno atualizado." : "Turno cadastrado.");
 }
@@ -107,7 +109,7 @@ export async function removeWeeklyShift(previous: TeamFormState, form: FormData)
   const { data, error } = await supabase.from("working_hours").delete()
     .eq("organization_id", organization.id).eq("professional_id", professionalId).eq("id", id.data).select("id").maybeSingle();
 
-  if (error) return teamFormError(previous, "Não foi possível remover o turno. Tente novamente.");
+  if (error) return teamFormError(previous, error.code === "BF030" ? scheduleConflict : "Não foi possível remover o turno. Tente novamente.");
   if (!data) return teamFormError(previous, "Turno indisponível para remoção.");
   return scheduleSaved(previous, professionalId, "Turno removido.");
 }
@@ -147,7 +149,7 @@ export async function saveTimeOff(previous: TeamFormState, form: FormData): Prom
     : supabase.from("time_off").insert({ ...block, organization_id: organization.id, professional_id: professionalId });
   const { data, error } = await query.select("id").maybeSingle();
 
-  if (error) return teamFormError(previous, "Não foi possível salvar o bloqueio. Tente novamente.");
+  if (error) return teamFormError(previous, error.code === "BF030" ? scheduleConflict : "Não foi possível salvar o bloqueio. Tente novamente.");
   if (!data) return teamFormError(previous, "Bloqueio indisponível para edição.");
   return scheduleSaved(previous, professionalId, id ? "Bloqueio atualizado." : "Bloqueio cadastrado.");
 }

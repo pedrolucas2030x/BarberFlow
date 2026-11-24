@@ -5,7 +5,7 @@ import { saveProfessional, setProfessionalStatus } from "@/features/professional
 import { TeamForm, TeamInput } from "./team-form";
 
 export function ProfessionalForm({ professional }: {
-  professional?: { id: string; name: string; commission_bps: number };
+  professional?: { id: string; name: string; commission_bps: number; specialties: string | null };
 }) {
   return (
     <TeamForm action={saveProfessional}>
@@ -15,6 +15,8 @@ export function ProfessionalForm({ professional }: {
           <div className={styles.fieldGrid}>
             <TeamInput label="Nome" name="name" initialValue={professional?.name} autoComplete="name"
               minLength={2} maxLength={100} required error={state.issues?.name?.[0]} />
+            <TeamInput label="Especialidades (opcional)" name="specialties" initialValue={professional?.specialties ?? ""}
+              maxLength={160} error={state.issues?.specialties?.[0]} />
             <TeamInput label="Comissão (%)" name="commission" inputMode="decimal" maxLength={6}
               initialValue={professional ? (professional.commission_bps / 100).toFixed(2).replace(".", ",") : "0"}
               required error={state.issues?.commission?.[0]} />

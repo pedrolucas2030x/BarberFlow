@@ -30,7 +30,8 @@
 ## 4. Agenda
 
 - [x] Implementar agenda diária, criação manual e cancelamento com histórico.
-- [ ] Entregar visão semanal e agendamento público com proteção contra abuso.
+- [x] Implementar visões semanal e mensal, reagendamento e fluxo público com idempotência e limitação de taxa.
+- [ ] Validar a jornada com Auth, Data API e PostgreSQL no mesmo ambiente, a acessibilidade mobile e a concorrência entre alterações e reservas.
 - [ ] Validar o fluxo completo no Supabase de teste, incluindo disponibilidade e fuso horário.
 
 ## 5. Financeiro
@@ -47,3 +48,10 @@
 ## 7. Comercialização
 
 - [ ] Validar cobrança recorrente, termos, privacidade, backups e observabilidade e preparar o deploy autorizado.
+
+## Super Admin
+
+- [ ] Acesso de plataforma separado de `membership`, autenticação forte, auditoria e diretório de estabelecimentos.
+- [ ] Assinaturas e métricas de receita recorrente e cancelamento após integração de cobrança conciliável.
+- [ ] Cupons e suporte com permissões mínimas e ações rastreáveis.
+- [ ] Monitoramento operacional, procedimentos de incidente e testes de recuperação.

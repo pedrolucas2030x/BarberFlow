@@ -20,6 +20,7 @@ export async function saveService(_previous: ServiceFormState, form: FormData): 
 
   const fields = serviceFieldsSchema.safeParse({
     name: form.get("name"),
+    description: form.get("description"),
     durationMinutes: form.get("durationMinutes"),
     price: form.get("price"),
     active: form.get("active"),
@@ -30,6 +31,7 @@ export async function saveService(_previous: ServiceFormState, form: FormData): 
   const supabase = await createClient();
   const values = {
     name: fields.data.name,
+    description: fields.data.description || null,
     duration_minutes: fields.data.durationMinutes,
     price_cents: fields.data.price,
     active: fields.data.active,

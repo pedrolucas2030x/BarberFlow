@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { navigation } from "@/components/dashboard/navigation-items";
 import { requireWorkspace, roleLabels } from "@/features/workspace/access";
 
@@ -32,6 +33,8 @@ export default async function SettingsPage() {
           <dd>{roleLabels[role]}</dd>
         </div>
       </dl>
+      <Link href={`/agendar/${organization.slug}`} className="text-link">Abrir página de agendamento da barbearia</Link>
+      <Link href="/equipe" className="text-link">Configurar profissionais e horários da reserva online</Link>
     </>
   );
 }
