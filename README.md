@@ -2,7 +2,7 @@
 
 **Seu negócio. No controle.**
 
-Micro-SaaS para barbearias de 1 a 5 profissionais. A Fase 1 inclui landing comercial, acesso por e-mail, cadastro da barbearia e painel administrativo. O painel usa o estabelecimento, o papel de acesso e o fuso gravados no banco. Agenda, cadastros e financeiro ainda exibem estados vazios. A oferta exibida na landing é uma proposta para o piloto, com 14 dias de teste previstos, sem ativação de assinatura ou cobrança nesta fase.
+Micro-SaaS para barbearias de 1 a 5 profissionais. O projeto inclui landing comercial, acesso por e-mail, cadastro da barbearia, painel administrativo e cadastros de serviços, clientes, profissionais e expediente. Agenda e financeiro estão em desenvolvimento. A oferta exibida na landing é uma proposta para o piloto, com 14 dias de teste previstos.
 
 ## Rodar o site
 
@@ -17,7 +17,7 @@ Abra [http://localhost:3000](http://localhost:3000). A landing funciona antes de
 
 ## Configurar o Supabase local
 
-Use Supabase CLI v3 e um runtime de contêiner compatível. O projeto inclui `supabase/config.toml`, migration versionada, templates de e-mail e testes SQL. Os comandos abaixo operam na instância local. [Guia do Supabase CLI](https://supabase.com/docs/guides/local-development)
+Use Supabase CLI v3 e um runtime de contêiner compatível. O projeto inclui `supabase/config.toml`, migrações versionadas, templates de e-mail e testes SQL. Os comandos abaixo operam na instância local. [Guia do Supabase CLI](https://supabase.com/docs/guides/local-development)
 
 ```sh
 npx --yes supabase@3.3.0 start
@@ -25,7 +25,7 @@ npx --yes supabase@3.3.0 migration up
 npx --yes supabase@3.3.0 test db supabase/tests
 ```
 
-1. Copie `.env.example` para `.env.local`. Preencha a URL da API local (por padrão `http://127.0.0.1:54321`) e a chave `sb_publishable_...` mostrada pelo CLI local.
+1. Copie `.env.example` para `.env.local`. Adicione `NEXT_PUBLIC_SUPABASE_URL` com a origem da API local (por padrão `http://127.0.0.1:54321`) e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` com a chave publicável mostrada pelo CLI local.
 2. Mantenha `BARBERFLOW_APP_URL=http://localhost:3000`, igual ao `site_url` de `supabase/config.toml`. Reinicie o servidor Next.js após editar o arquivo.
 3. Cadastre uma conta de teste e abra a caixa de e-mail local em `http://localhost:54324`. Abra a mensagem e confirme o e-mail na página BarberFlow. Faça login, cadastre uma barbearia e confira os dados em `/configuracoes`.
 4. Teste a recuperação enviando um novo e-mail, abrindo o link e cadastrando a nova senha antes de entrar novamente.
@@ -45,7 +45,7 @@ Mantenha `.env.local` fora do Git. A fase usa somente a chave publicável, com a
 
 ## Validar em um projeto hospedado de teste
 
-1. Escolha um projeto de teste autorizado e revise a migration em `supabase/migrations/` antes de aplicá-la. Ela cria três tabelas e prepara os perfis das contas Auth já existentes no projeto.
+1. Escolha um projeto de teste autorizado. Revise e aplique somente as migrações pendentes de `supabase/migrations/`, na ordem dos arquivos. A primeira cria a base multi-tenant e os perfis das contas Auth já existentes. A segunda adiciona os cadastros, as permissões e as restrições que impedem vínculos entre estabelecimentos.
 2. No Supabase Auth, habilite cadastro por e-mail e confirmação, mantenha entradas anônimas desabilitadas e configure senha mínima de 12 caracteres. Faça o Site URL coincidir com `BARBERFLOW_APP_URL`. Inclua a URL exata `<origem>/auth/confirm` nos redirecionamentos permitidos. [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 3. Use `supabase/templates/confirmation.html` para confirmação e `supabase/templates/recovery.html` para recuperação. Os links usam `TokenHash` e os tipos `email` ou `recovery`. Configure SMTP próprio se necessário para aplicar os templates e enviar para os participantes do piloto. Projetos Free novos dependem de SMTP próprio para personalizá-los. [SMTP no Supabase](https://supabase.com/docs/guides/auth/auth-smtp) · [Personalização de templates no plano Free](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier)
 4. Configure as quatro variáveis no ambiente do aplicativo e valide o fluxo com duas contas em estabelecimentos diferentes. Confira a confirmação e a recuperação pelo e-mail recebido, o onboarding, as rotas privadas e a saída da conta. No proxy ou provedor de hospedagem, exclua a query de `/auth/confirm` dos registros de acesso para preservar os tokens de confirmação.
@@ -59,9 +59,18 @@ npm run build
 npm test
 ```
 
-Execute `npm test` após o build. A suíte executa testes de formulário e sobe a aplicação de produção em portas efêmeras. O serviço HTTP de teste simula o contrato de Auth e da Data API. Ele permite verificar login, cookies, autorização por perfil, estados sem configuração e onboarding sem usar contas reais.
+Execute `npm test` após o build. A suíte executa testes de validação e sobe a aplicação de produção em portas efêmeras. O serviço HTTP de teste simula Auth e a Data API para verificar sessão, autorização por papel, onboarding e os formulários de cadastro sem usar contas reais.
 
-`supabase/tests/tenancy.test.sql` testa permissões e integridade no PostgreSQL, incluindo isolamento entre usuários de estabelecimentos diferentes. A validação desta fase executou a migration e a suíte em um PostgreSQL 18 isolado, com o schema Auth mínimo exigido pelos testes. Para validar os serviços juntos e a entrega dos e-mails, use o ambiente Supabase local descrito acima.
+Os testes em `supabase/tests/` cobrem permissões e integridade no PostgreSQL, incluindo isolamento entre estabelecimentos. Para validar Auth, Data API e banco juntos e exercitar a entrega dos e-mails, use o ambiente Supabase local descrito acima.
+
+## Cadastros e expediente
+
+- Proprietários e gestores de uma barbearia ativa administram os cadastros em `/servicos`, `/clientes` e `/equipe`.
+- Em `/painel`, o bloco de primeiros passos destaca o próximo cadastro pendente. O progresso considera a existência de um serviço ativo, um profissional ativo e um cliente no estabelecimento da sessão.
+- Serviços têm nome único por barbearia, duração em minutos e preço em centavos. Serviços e profissionais podem ser desativados e reativados. A comissão cadastrada do profissional é uma porcentagem gravada em pontos-base.
+- O telefone é normalizado no formato internacional e é único por barbearia. Consentimento de marketing é opcional e começa desmarcado. A exclusão de um cliente exige confirmação no formulário.
+- As listas permitem buscar serviços por nome e clientes por nome ou telefone. O filtro acompanha a paginação e o termo de busca fica fora do endereço da página.
+- Na página de expediente de cada profissional, vincule serviços, configure um turno no mesmo dia por dia da semana e, se necessário, uma pausa dentro desse turno. Bloqueios usam data e hora no fuso do estabelecimento.
 
 ## Estrutura e decisões
 

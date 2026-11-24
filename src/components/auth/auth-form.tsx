@@ -2,8 +2,8 @@
 
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { initialAuthFormState, type AuthFieldName, type AuthFormAction } from "@/features/auth/form-state";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { initialAuthFormState, type AuthFieldName, type AuthFormAction, type AuthFormState } from "@/features/auth/form-state";
 import type { newPasswordPolicy } from "@/lib/validation/auth";
 import { AuthNotice } from "./auth-screen";
 import styles from "./auth.module.css";
@@ -91,12 +91,46 @@ export function AuthForm({ mode, action, disabled = false, passwordPolicy }: {
 }) {
   const [state, formAction, pending] = useActionState(action, initialAuthFormState);
   const [values, setValues] = useState({ name: "", email: "" });
+  const [dismissedResult, setDismissedResult] = useState<AuthFormState | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const resultRef = useRef<HTMLHeadingElement>(null);
   const [label, pendingLabel] = buttons[mode];
+  const showEmailResult = (mode === "signup" || mode === "recovery") && state.status === "success" && state !== dismissedResult;
+
+  useEffect(() => {
+    if (showEmailResult) {
+      resultRef.current?.focus();
+    } else if (state.status === "error") {
+      const target = formRef.current?.querySelector<HTMLElement>('input[aria-invalid="true"]')
+        ?? formRef.current?.querySelector<HTMLElement>('[data-auth-error]');
+      target?.focus();
+    } else if (dismissedResult && state === dismissedResult) {
+      formRef.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
+    }
+  }, [dismissedResult, showEmailResult, state]);
+
+  if (showEmailResult) {
+    return (
+      <div className={styles.emailResult}>
+        <h2 ref={resultRef} tabIndex={-1}>Confira sua caixa de entrada</h2>
+        <p>{state.message}</p>
+        <Link href="/login" className="primary-button">Ir para o login <ArrowRight size={17} aria-hidden="true" /></Link>
+        <button type="button" className={styles.inlineLink} onClick={() => setDismissedResult(state)}>
+          Usar outro e-mail
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <form className={styles.form} action={formAction} aria-busy={pending}>
+    <form ref={formRef} className={styles.form} action={formAction} aria-busy={pending}>
       {disabled && <AuthNotice status="error">A conexão com o serviço de acesso ainda não foi configurada.</AuthNotice>}
-      {state.status !== "idle" && state.message && <AuthNotice status={state.status}>{state.message}</AuthNotice>}
+      {state.status === "error" && state.message && (
+        <div data-auth-error tabIndex={-1}><AuthNotice status="error">{state.message}</AuthNotice></div>
+      )}
+      {state.status === "success" && state !== dismissedResult && state.message && (
+        <AuthNotice status="success">{state.message}</AuthNotice>
+      )}
 
       {inputs[mode].map((field) => {
         const error = state.fieldErrors?.[field]?.[0];
@@ -124,6 +158,7 @@ export function AuthForm({ mode, action, disabled = false, passwordPolicy }: {
               name={field}
               autoComplete={field === "email" && mode === "login" ? "username" : field}
               autoCapitalize={field === "email" ? "none" : "words"}
+              spellCheck={field === "email" ? false : undefined}
               maxLength={field === "email" ? 254 : 100}
               value={values[field]}
               onChange={(event) => setValues({ ...values, [field]: event.currentTarget.value })}

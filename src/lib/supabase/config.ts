@@ -17,10 +17,11 @@ function readOrigin(value?: string) {
 }
 
 export function getSupabaseConfig() {
-  // Server-only lookup so a promoted build can read its runtime configuration.
-  const env = process.env;
-  const url = readOrigin(env.NEXT_PUBLIC_SUPABASE_URL);
-  const publishableKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+  // Avoid build-time substitution of public variables in the server bundle.
+  const configuredUrl: string | undefined = Reflect.get(process.env, "NEXT_PUBLIC_SUPABASE_URL");
+  const configuredKey: string | undefined = Reflect.get(process.env, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  const url = readOrigin(configuredUrl);
+  const publishableKey = configuredKey?.trim();
 
   if (!url || !publishableKey || !/^sb_publishable_[\w-]{11,}$/.test(publishableKey)) return null;
 

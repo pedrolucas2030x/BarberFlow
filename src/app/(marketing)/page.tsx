@@ -21,18 +21,18 @@ export const metadata: Metadata = {
 const features = [
   {
     icon: CalendarDays,
-    title: "Agenda e serviços",
-    description: "Agendamentos, horários da equipe e catálogo de serviços com duração e preço.",
+    title: "Serviços e expediente",
+    description: "Monte o catálogo com duração e preço. Defina os turnos, as pausas e os bloqueios da equipe.",
   },
   {
     icon: UsersRound,
     title: "Clientes e equipe",
-    description: "Cadastro de clientes e profissionais, histórico de atendimento e expediente.",
+    description: "Organize seus contatos, cadastre os profissionais e vincule os serviços de cada pessoa.",
   },
   {
     icon: Wallet,
-    title: "Caixa e comissões",
-    description: "Registro de pagamentos recebidos, despesas e comissões da equipe.",
+    title: "Agenda e caixa",
+    description: "Agendamentos, pagamentos recebidos, despesas e cálculo de comissões estão em desenvolvimento.",
   },
 ];
 
@@ -103,7 +103,7 @@ export default function LandingPage() {
           <div className={styles.container}>
             <div className={styles.sectionIntro}>
               <h2 id="features-title">Da agenda ao caixa.</h2>
-              <p id="features-description">O piloto começa pelo cadastro da barbearia e pelo painel administrativo. Os módulos de operação abaixo estão em desenvolvimento.</p>
+              <p id="features-description">As primeiras ferramentas do painel ajudam a preparar sua barbearia para a agenda.</p>
             </div>
             <ul className={styles.features}>
               {features.map(({ icon: Icon, title, description }) => (
@@ -142,17 +142,26 @@ export default function LandingPage() {
             <div className={styles.plan}>
               <div className={styles.planIntro}>
                 <h2 id="plan-title">Plano piloto</h2>
-                <p>Oferta em validação para barbearias de Palmeirais e região.</p>
+                <p>Para barbearias de 1 a 5 profissionais em Palmeirais e região.</p>
               </div>
               <div className={styles.planDetails}>
-                <p className={styles.planPrice}><strong>R$ 49,90</strong><span> / mês</span></p>
+                <p className={styles.priceLabel}>Preço previsto</p>
+                <p className={styles.planPrice}><strong>R$ 49,90</strong><span>por mês</span></p>
                 <ul className={styles.planTerms}>
                   <li><CircleCheck size={18} aria-hidden="true" /> 14 dias de teste previstos</li>
                   <li><CircleCheck size={18} aria-hidden="true" /> Cobrança somente com sua autorização</li>
                 </ul>
-                <Link href="/cadastro" className={styles.primaryAction}>
-                  Criar conta <ArrowUpRight size={19} aria-hidden="true" />
+                <Link href="/cadastro" className={`${styles.primaryAction} ${styles.planAction}`}>
+                  Criar conta para o piloto <ArrowUpRight size={19} aria-hidden="true" />
                 </Link>
+              </div>
+              <div className={styles.planIncludes}>
+                <h3>O que você pode usar no piloto</h3>
+                <ul className={styles.planTerms}>
+                  <li><CircleCheck size={18} aria-hidden="true" /> Painel da sua barbearia</li>
+                  <li><CircleCheck size={18} aria-hidden="true" /> Cadastros de serviços, clientes e equipe</li>
+                  <li><CircleCheck size={18} aria-hidden="true" /> Turnos, pausas e bloqueios por profissional</li>
+                </ul>
               </div>
             </div>
           </div>

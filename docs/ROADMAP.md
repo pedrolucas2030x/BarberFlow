@@ -21,7 +21,11 @@
 
 ## 3. Cadastros
 
-- [ ] Implementar CRUD autorizado de profissionais, serviços, clientes e expediente, com validação e vínculos consistentes por estabelecimento.
+- [x] Cadastrar, editar, desativar e reativar serviços e profissionais.
+- [x] Cadastrar, editar e excluir clientes com confirmação, telefone normalizado e consentimento opcional de marketing.
+- [x] Vincular serviços a profissionais e gerenciar turnos semanais, pausas e bloqueios no fuso da barbearia.
+- [x] Validar formulários e permissões com a suíte da aplicação e testar integridade e isolamento em PostgreSQL local.
+- [ ] Validar os cadastros de ponta a ponta com as migrações aplicadas em um Supabase de teste autorizado.
 
 ## 4. Agenda
 

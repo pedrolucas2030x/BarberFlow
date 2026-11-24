@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { createHmac } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { createServer } from "node:http";
 
@@ -14,6 +14,40 @@ const mainOrg = {
 };
 const secondOrg = { ...mainOrg, id: "10000000-0000-4000-8000-000000000002", name: "Estabelecimento Beta", slug: "estabelecimento-beta" };
 
+const catalogIds = {
+  service: "30000000-0000-4000-8000-000000000001",
+  foreignService: "30000000-0000-4000-8000-000000000002",
+  customer: "40000000-0000-4000-8000-000000000001",
+  professional: "50000000-0000-4000-8000-000000000001",
+  foreignProfessional: "50000000-0000-4000-8000-000000000002",
+};
+
+const catalogDefaults = {
+  professionals: { active: true, membership_id: null, commission_bps: 0 },
+  services: { active: true },
+  customers: { marketing_consent: false },
+};
+
+function createCatalogFixtures() {
+  return {
+    services: [
+      { id: catalogIds.service, organization_id: mainOrg.id, name: "Corte Alfa", price_cents: 5000, duration_minutes: 30, active: true },
+      { id: catalogIds.foreignService, organization_id: secondOrg.id, name: "Corte Beta", price_cents: 8000, duration_minutes: 45, active: true },
+    ],
+    customers: [
+      { id: catalogIds.customer, organization_id: mainOrg.id, name: "Cliente Alfa", phone: "+5586991110000", marketing_consent: false },
+      { id: randomUUID(), organization_id: secondOrg.id, name: "Cliente Beta", phone: "+5586992220000", marketing_consent: false },
+    ],
+    professionals: [
+      { id: catalogIds.professional, organization_id: mainOrg.id, name: "Profissional Alfa", active: true, commission_bps: 2750, membership_id: null },
+      { id: catalogIds.foreignProfessional, organization_id: secondOrg.id, name: "Profissional Beta", active: true, commission_bps: 3500, membership_id: null },
+    ],
+    professional_services: [],
+    working_hours: [],
+    time_off: [],
+  };
+}
+
 const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 
 async function readJson(request) {
@@ -24,6 +58,7 @@ async function readJson(request) {
 
 export async function startSupabaseFixture() {
   const log = [];
+  const catalogs = createCatalogFixtures();
   const users = new Map();
   const tokens = new Map();
   const accounts = [
@@ -73,6 +108,11 @@ export async function startSupabaseFixture() {
       });
     }
 
+    if (request.method === "POST" && url.pathname === "/auth/v1/signup") {
+      const { email } = await readJson(request);
+      return send(200, { id: randomUUID(), email, aud: "authenticated", app_metadata: {}, user_metadata: {} });
+    }
+
     if (!account) return send(401, { code: "bad_jwt", message: "Invalid session" });
     if (url.pathname === "/auth/v1/user") return send(200, account.user);
     if (url.pathname === "/rest/v1/memberships") {
@@ -91,6 +131,56 @@ export async function startSupabaseFixture() {
       return send(200, account.membership.organizations.id);
     }
 
+    const table = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/)?.[1];
+    if (table && Object.hasOwn(catalogs, table)) {
+      const membership = account.membership;
+      if (!membership || membership.role === "barber" || membership.organizations.status !== "active") {
+        return send(403, { code: "42501" });
+      }
+
+      const tenant = membership.organizations.id;
+      if (request.method !== "POST" && url.searchParams.get("organization_id") !== `eq.${tenant}`) {
+        return send(403, { code: "42501" });
+      }
+
+      const rows = catalogs[table];
+      const filters = [...url.searchParams].filter(([, value]) => value.startsWith("eq."));
+      const matches = rows.filter((row) => row.organization_id === tenant && filters.every(([field, value]) => String(row[field]) === value.slice(3)));
+      const representation = request.headers.prefer?.includes("return=representation");
+      const wantsSingle = request.headers.accept?.includes("vnd.pgrst.object+json");
+      const sendRows = (result) => {
+        if (!wantsSingle) return send(200, result);
+        if (result.length === 1) return send(200, result[0]);
+        return send(406, { code: "PGRST116" });
+      };
+
+      if (request.method === "GET") {
+        const offset = Number(url.searchParams.get("offset") ?? 0);
+        const limit = Number(url.searchParams.get("limit") ?? matches.length);
+        const name = url.searchParams.get("name")?.match(/^ilike\.%(.*)%$/)?.[1].replace(/\\(.)/g, "$1").toLowerCase();
+        const phone = url.searchParams.get("phone")?.match(/^like\.%(\d+)%$/)?.[1];
+        const filtered = matches.filter((row) => (!name || row.name.toLowerCase().includes(name)) && (!phone || row.phone.includes(phone)));
+        return sendRows(filtered.slice(offset, offset + limit));
+      }
+      if (request.method === "POST") {
+        const values = await readJson(request);
+        if (values.organization_id !== tenant) return send(403, { code: "42501" });
+        const row = { id: randomUUID(), created_at: "2026-01-01T00:00:00Z", ...catalogDefaults[table], ...values };
+        rows.push(row);
+        return representation ? sendRows([row]) : send(201);
+      }
+      if (request.method === "PATCH") {
+        const values = await readJson(request);
+        if ("organization_id" in values || "id" in values) return send(403, { code: "42501" });
+        for (const row of matches) Object.assign(row, values);
+        return representation ? sendRows(matches) : send(204);
+      }
+      if (request.method === "DELETE") {
+        catalogs[table] = rows.filter((row) => !matches.includes(row));
+        return representation ? sendRows(matches) : send(204);
+      }
+    }
+
     return send(404, { message: "Unexpected test request" });
   });
 
@@ -102,6 +192,8 @@ export async function startSupabaseFixture() {
     url,
     publishableKey,
     log,
+    catalogs,
+    catalogIds,
     async makeCookie(handle) {
       const cookies = new Map();
       const client = createServerClient(url, publishableKey, {
