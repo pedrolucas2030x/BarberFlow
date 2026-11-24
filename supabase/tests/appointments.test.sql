@@ -79,8 +79,8 @@ select pg_temp.check_test((select count(*) = 1 and min(price_cents) = 6500 and m
   from public.list_appointments('62000000-0000-4000-8000-000000000001', pg_temp.booking_day())), 3, 'cria no fuso local e usa o catálogo');
 select pg_temp.check_test(pg_temp.has_sqlstate($$select pg_temp.book('09:45')$$, '23P01'), 4, 'bloqueia sobreposição');
 select pg_temp.check_test(pg_temp.book('10:00') is not null and pg_temp.book('09:30', '2') is not null, 5, 'aceita horários adjacentes ou profissionais distintos');
-select pg_temp.check_test(pg_temp.has_sqlstate($$select pg_temp.book('08:45')$$, 'BF004')
-  and pg_temp.has_sqlstate($$select pg_temp.book('11:45')$$, 'BF004'), 6, 'respeita turno e pausa');
+select pg_temp.check_test(pg_temp.has_sqlstate($$select pg_temp.book('11:45')$$, 'BF004'),
+  6, 'respeita pausa');
 select pg_temp.check_test(pg_temp.has_sqlstate($$select pg_temp.book('14:45')$$, 'BF005'), 7, 'respeita bloqueios');
 select pg_temp.check_test(pg_temp.has_sqlstate($$select pg_temp.book('16:00', '1', '2')$$, 'BF003'), 8, 'rejeita cliente de outra barbearia');
 
@@ -110,17 +110,17 @@ select pg_temp.check_test((select count(*) = 4 and count(customer_name) = 0
   from public.list_appointments('62000000-0000-4000-8000-000000000001', pg_temp.booking_day())),
   14, 'exclusão de cliente preserva agenda sem reter o nome');
 
-select public.book_with_customer_name('62000000-0000-4000-8000-000000000001',
-  '64000000-0000-4000-8000-000000000001', '65000000-0000-4000-8000-000000000001',
-  'Cliente sem telefone', null, (pg_temp.booking_day() + time '16:30') at time zone 'America/Fortaleza');
+select public.book_solo_appointment('62000000-0000-4000-8000-000000000001',
+  '65000000-0000-4000-8000-000000000001', (pg_temp.booking_day() + time '19:30') at time zone 'America/Fortaleza',
+  null, 'Cliente sem telefone', null);
 
 select pg_temp.check_test((select count(*) = 1
   from public.list_appointments('62000000-0000-4000-8000-000000000001', pg_temp.booking_day())
-  where customer_name = 'Cliente sem telefone'), 15, 'agenda com nome e sem telefone');
+  where customer_name = 'Cliente sem telefone'), 15, 'agenda com nome e sem telefone fora do turno');
 select pg_temp.check_test(pg_temp.has_sqlstate($$select public.book_with_customer_name(
   '62000000-0000-4000-8000-000000000001', '64000000-0000-4000-8000-000000000001',
   '65000000-0000-4000-8000-000000000001', 'Cliente não gravado', null,
-  (pg_temp.booking_day() + time '16:30') at time zone 'America/Fortaleza')$$, '23P01')
+  (pg_temp.booking_day() + time '19:30') at time zone 'America/Fortaleza')$$, '23P01')
   and not exists (select 1 from public.customers where name = 'Cliente não gravado'),
   16, 'conflito reverte o cadastro do cliente');
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import styles from "@/components/dashboard/registry.module.css";
-import { getAppointmentCustomers, getBookableProfessionals } from "@/features/appointments/data";
+import { getAppointmentCustomers, getActiveAppointmentServices } from "@/features/appointments/data";
 import { appointmentDay, todayForAppointments } from "@/features/appointments/dates";
 import { requireWorkspace } from "@/features/workspace/access";
 import { AppointmentForm } from "./appointment-form";
@@ -16,8 +16,8 @@ export default async function NewAppointmentPage({ searchParams }: {
   const today = todayForAppointments(organization.timezone);
   const selectedDay = appointmentDay(query.data);
   const day = selectedDay && selectedDay >= today ? selectedDay : today;
-  const [professionals, customers] = await Promise.all([
-    getBookableProfessionals(organization.id),
+  const [services, customers] = await Promise.all([
+    getActiveAppointmentServices(organization.id),
     getAppointmentCustomers(organization.id),
   ]);
 
@@ -29,14 +29,14 @@ export default async function NewAppointmentPage({ searchParams }: {
       </div>
       <section className={styles.panel} aria-labelledby="appointment-details">
         <h2 id="appointment-details" className={styles.panelHeading}>Dados do agendamento</h2>
-        {(professionals === null || customers.failed) ? (
+        {(services === null || customers.failed) ? (
           <p role="alert" className={`${styles.error} mt-4`}>Não foi possível carregar os cadastros. Atualize a página e tente novamente.</p>
-        ) : professionals.length === 0 ? (
-          <p className={`${styles.muted} mt-4`}>Cadastre um <Link href="/servicos" className="inline-link">serviço ativo</Link> e vincule-o a um profissional ativo na <Link href="/equipe" className="inline-link">Equipe</Link>.</p>
+        ) : services.length === 0 ? (
+          <p className={`${styles.muted} mt-4`}>Cadastre seu <Link href="/servicos/novo" className="text-link">primeiro serviço</Link> para começar a agendar.</p>
         ) : (
-          <AppointmentForm key={day} professionals={professionals} customers={customers} day={day} today={today} />
+          <AppointmentForm key={day} services={services} customers={customers} day={day} today={today} />
         )}
-        {(professionals === null || !professionals.length || customers.failed || !customers.rows.length) && (
+        {(services === null || !services.length || customers.failed) && (
           <Link href={`/agenda?data=${day}`} className={`${styles.secondary} mt-4`}>Voltar à agenda</Link>
         )}
       </section>

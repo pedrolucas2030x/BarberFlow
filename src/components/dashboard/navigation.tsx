@@ -9,9 +9,9 @@ import { navigation } from "./navigation-items";
 type NavigationItem = (typeof navigation)[keyof typeof navigation];
 
 const mainItems = [navigation.dashboard, navigation.schedule, navigation.customers];
-const desktopItems = [...mainItems, navigation.services, navigation.team, navigation.finances];
+const desktopItems = [...mainItems, navigation.services, navigation.finances];
 const mobileItems = [...mainItems, navigation.finances];
-const moreItems = [navigation.services, navigation.team, navigation.settings];
+const moreItems = [navigation.services, navigation.settings];
 
 function isCurrent(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));

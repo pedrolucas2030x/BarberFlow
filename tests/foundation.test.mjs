@@ -271,7 +271,7 @@ test("onboarding autorizado chama a RPC e abre o painel com o cadastro gravado",
     name: "Primeiro serviço", durationMinutes: "30", price: "45,00", active: "on",
   }), "/servicos");
   const updated = await fetch(`${baseUrl}/painel`, { headers: { cookie } });
-  assert.match(await updated.text(), /Próximo passo\. Cadastre ou reative um profissional/);
+  assert.match(await updated.text(), /Cadastros iniciais concluídos/);
 });
 
 async function submitCatalogForm(path, cookie, field, values) {

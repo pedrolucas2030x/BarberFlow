@@ -134,10 +134,11 @@ export async function startSupabaseFixture() {
 
     const appointmentAction = url.pathname.match(/^\/rest\/v1\/rpc\/(list|create|cancel)_appointments?$/)?.[1];
     const paidAgenda = url.pathname === "/rest/v1/rpc/list_appointments_with_payments";
+    const soloBooking = url.pathname === "/rest/v1/rpc/book_solo_appointment";
     const complete = url.pathname === "/rest/v1/rpc/complete_appointment";
     const recordPayment = url.pathname === "/rest/v1/rpc/record_appointment_payment";
     const finances = url.pathname === "/rest/v1/rpc/received_payments_day";
-    if (request.method === "POST" && (appointmentAction || paidAgenda || complete || recordPayment || finances)) {
+    if (request.method === "POST" && (appointmentAction || soloBooking || paidAgenda || complete || recordPayment || finances)) {
       const args = await readJson(request);
       const organization = account.membership?.organizations;
       if (!organization || args.p_organization_id !== organization.id) return send(403, { code: "42501" });
@@ -175,7 +176,8 @@ export async function startSupabaseFixture() {
         return send(200, true);
       }
       const service = catalogs.services.find(({ id, organization_id }) => id === args.p_service_id && organization_id === organization.id);
-      const professional = catalogs.professionals.find(({ id, organization_id }) => id === args.p_professional_id && organization_id === organization.id);
+      const professional = catalogs.professionals.find(({ id, organization_id }) =>
+        organization_id === organization.id && (soloBooking || id === args.p_professional_id));
       const customer = catalogs.customers.find(({ id, organization_id }) => id === args.p_customer_id && organization_id === organization.id);
       if (!service || !professional || !customer) return send(400, { code: "BF002" });
       const row = {

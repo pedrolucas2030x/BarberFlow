@@ -139,6 +139,13 @@ export type Database = {
         };
         Returns: string;
       };
+      book_solo_appointment: {
+        Args: {
+          p_organization_id: string; p_service_id: string; p_starts_at: string;
+          p_customer_id: string | null; p_customer_name: string | null; p_customer_phone: string | null;
+        };
+        Returns: string;
+      };
       list_appointments: {
         Args: { p_organization_id: string; p_day: string };
         Returns: Appointment[];

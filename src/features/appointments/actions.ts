@@ -15,7 +15,6 @@ import { appointmentDay, todayForAppointments } from "./dates";
 export type AppointmentFormState = { message?: string };
 
 const bookingInput = z.object({
-  professionalId: z.uuid(),
   serviceId: z.uuid(),
   customerId: z.union([z.uuid(), z.literal("")]),
   start: z.string(),
@@ -27,7 +26,7 @@ const bookingErrors: Record<string, string> = {
   BF001: "Escolha uma data e um horário futuros.",
   BF002: "Selecione um serviço ativo vinculado ao profissional.",
   BF003: "Selecione um cliente disponível na sua barbearia.",
-  BF004: "O serviço precisa caber no turno, fora da pausa do profissional.",
+  BF004: "Escolha um horário fora da pausa e com término no mesmo dia.",
   BF005: "O profissional tem um bloqueio nesse horário.",
 };
 
@@ -44,14 +43,13 @@ export async function searchAppointmentCustomers(_: AppointmentCustomers, form: 
 export async function createAppointment(_: AppointmentFormState, form: FormData): Promise<AppointmentFormState> {
   const { organization } = await requireWorkspace();
   const fields = bookingInput.safeParse({
-    professionalId: form.get("professional"),
     serviceId: form.get("service"),
     customerId: form.get("customer") ?? "",
     start: `${form.get("date")}T${form.get("time")}`,
   });
-  if (!fields.success) return { message: "Selecione o profissional, o serviço e o cliente e informe a data e o horário." };
+  if (!fields.success) return { message: "Selecione o serviço e informe a data e o horário." };
 
-  const { professionalId, serviceId, customerId, start } = fields.data;
+  const { serviceId, customerId, start } = fields.data;
   const conversion = tenantDateTimeToInstant(start, organization.timezone);
   if ("error" in conversion) {
     return { message: conversion.error === "ambiguous"
@@ -62,7 +60,6 @@ export async function createAppointment(_: AppointmentFormState, form: FormData)
   const supabase = await createClient();
   const booking = {
     p_organization_id: organization.id,
-    p_professional_id: professionalId,
     p_service_id: serviceId,
     p_starts_at: conversion.instant,
   };
@@ -71,11 +68,10 @@ export async function createAppointment(_: AppointmentFormState, form: FormData)
   const phone = rawPhone === null || rawPhone === "" ? null : customerFieldsSchema.shape.phone.safeParse(rawPhone);
   if (!customerId && !name.success) return { message: "Informe o nome do cliente (2 a 100 caracteres)." };
   if (!customerId && phone && !phone.success) return { message: "Confira o telefone e o DDD ou deixe o campo em branco." };
-  const { error } = customerId
-    ? await supabase.rpc("create_appointment", { ...booking, p_customer_id: customerId })
-    : await supabase.rpc("book_with_customer_name", {
-      ...booking, p_customer_name: name.data!, p_customer_phone: phone?.data ?? null,
-    });
+  const { error } = await supabase.rpc("book_solo_appointment", {
+    ...booking, p_customer_id: customerId || null,
+    p_customer_name: name.data ?? null, p_customer_phone: phone?.data ?? null,
+  });
   if (error) return { message: bookingErrors[error.code] ?? "Não foi possível criar o agendamento. Tente novamente." };
 
   revalidatePath("/agenda");

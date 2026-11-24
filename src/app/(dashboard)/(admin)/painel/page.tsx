@@ -11,8 +11,6 @@ export const metadata: Metadata = { title: "Painel" };
 
 const steps = [
   { key: "services", ...navigation.services, pending: "Cadastre ou reative um serviço com duração e preço." },
-  { key: "team", ...navigation.team, pending: "Cadastre ou reative um profissional para atender na barbearia." },
-  { key: "customers", ...navigation.customers, pending: "Cadastre o primeiro cliente para ter o contato à mão." },
 ] as const;
 
 export default async function DashboardPage() {
@@ -69,7 +67,7 @@ export default async function DashboardPage() {
 
       <section className={`panel ${styles.modules}`} aria-labelledby="operational-modules">
         <h2 id="operational-modules">Agenda</h2>
-        <p>Consulte os horários e registre agendamentos para a equipe.</p>
+        <p>Consulte seus horários e marque um atendimento.</p>
         <Link href="/agenda" className={`${completed === steps.length ? "primary-button" : controls.secondary} mt-3`}>
           Abrir agenda <ArrowRight size={15} aria-hidden="true" />
         </Link>

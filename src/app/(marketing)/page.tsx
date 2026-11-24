@@ -15,19 +15,19 @@ import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
   title: { absolute: "BarberFlow | Gestão para barbearias" },
-  description: "Conheça o BarberFlow, sistema de gestão para barbearias de 1 a 5 profissionais, com piloto em Palmeirais e região.",
+  description: "Conheça o BarberFlow, sistema de gestão para barbeiros que atendem sozinhos, com piloto em Palmeirais e região.",
 };
 
 const features = [
   {
     icon: CalendarDays,
-    title: "Serviços e expediente",
-    description: "Monte o catálogo com duração e preço. Defina os turnos, as pausas e os bloqueios da equipe.",
+    title: "Serviços",
+    description: "Cadastre seus cortes com duração e preço.",
   },
   {
     icon: UsersRound,
-    title: "Clientes e equipe",
-    description: "Organize seus contatos, cadastre os profissionais e vincule os serviços de cada pessoa.",
+    title: "Clientes",
+    description: "Cadastre o cliente na hora de marcar o corte.",
   },
   {
     icon: Wallet,
@@ -76,7 +76,7 @@ export default function LandingPage() {
             <div className={styles.heroCopy}>
               <p className={styles.pilotLocation}><MapPin size={16} aria-hidden="true" /> Piloto em Palmeirais e região</p>
               <h1 id="landing-title">Seu negócio.<br /><span>No controle.</span></h1>
-              <p className={styles.heroDescription}>Gestão para barbearias de 1 a 5 profissionais. Comece cadastrando seu estabelecimento e acesse seu painel de gestão.</p>
+              <p className={styles.heroDescription}>Gestão para barbeiros que atendem sozinhos. Comece cadastrando seu estabelecimento e acesse seu painel de gestão.</p>
               <div className={styles.heroActions}>
                 <Link href="/cadastro" className={styles.primaryAction}>
                   Criar conta <ArrowUpRight size={19} aria-hidden="true" />
@@ -103,7 +103,7 @@ export default function LandingPage() {
           <div className={styles.container}>
             <div className={styles.sectionIntro}>
               <h2 id="features-title">Da agenda ao caixa.</h2>
-              <p id="features-description">Configure os serviços e o expediente da equipe para começar a agendar.</p>
+              <p id="features-description">Cadastre um serviço para começar a agendar.</p>
             </div>
             <ul className={styles.features}>
               {features.map(({ icon: Icon, title, description }) => (
@@ -142,7 +142,7 @@ export default function LandingPage() {
             <div className={styles.plan}>
               <div className={styles.planIntro}>
                 <h2 id="plan-title">Plano piloto</h2>
-                <p>Para barbearias de 1 a 5 profissionais em Palmeirais e região.</p>
+                <p>Para barbeiros que atendem sozinhos em Palmeirais e região.</p>
               </div>
               <div className={styles.planDetails}>
                 <p className={styles.priceLabel}>Preço previsto</p>
@@ -159,8 +159,8 @@ export default function LandingPage() {
                 <h3>O que você pode usar no piloto</h3>
                 <ul className={styles.planTerms}>
                   <li><CircleCheck size={18} aria-hidden="true" /> Painel da sua barbearia</li>
-                  <li><CircleCheck size={18} aria-hidden="true" /> Cadastros de serviços, clientes e equipe</li>
-                  <li><CircleCheck size={18} aria-hidden="true" /> Turnos, pausas e bloqueios por profissional</li>
+                  <li><CircleCheck size={18} aria-hidden="true" /> Cadastros de serviços e clientes</li>
+                  <li><CircleCheck size={18} aria-hidden="true" /> Agenda para um barbeiro</li>
                 </ul>
               </div>
             </div>

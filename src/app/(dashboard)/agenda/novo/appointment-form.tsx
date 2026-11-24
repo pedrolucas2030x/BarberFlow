@@ -6,8 +6,8 @@ import styles from "@/components/dashboard/registry.module.css";
 import { createAppointment, searchAppointmentCustomers } from "@/features/appointments/actions";
 import type { AppointmentCustomers } from "@/features/appointments/data";
 
-export function AppointmentForm({ professionals, customers, day, today }: {
-  professionals: { id: string; name: string; services: { id: string; name: string; duration_minutes: number }[] }[];
+export function AppointmentForm({ services, customers, day, today }: {
+  services: { id: string; name: string; duration_minutes: number }[];
   customers: AppointmentCustomers;
   day: string;
   today: string;
@@ -15,16 +15,13 @@ export function AppointmentForm({ professionals, customers, day, today }: {
   const [state, action, pending] = useActionState(createAppointment, {});
   const [results, search, searching] = useActionState(searchAppointmentCustomers, customers);
   const [query, setQuery] = useState("");
-  const solo = professionals.length === 1 ? professionals[0] : undefined;
-  const [professional, setProfessional] = useState(solo?.id ?? "");
   const [existing, setExisting] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [customer, setCustomer] = useState("");
-  const [service, setService] = useState(solo?.services.length === 1 ? solo.services[0].id : "");
+  const [service, setService] = useState(services.length === 1 ? services[0].id : "");
   const [date, setDate] = useState(day);
   const [time, setTime] = useState("");
-  const services = professionals.find(({ id }) => id === professional)?.services ?? [];
   const selectedCustomer = results.rows.some(({ id }) => id === customer) ? customer : "";
 
   return (
@@ -50,20 +47,10 @@ export function AppointmentForm({ professionals, customers, day, today }: {
       <form action={action} className={styles.form} aria-busy={pending}>
         {state.message && <p role="alert" className={styles.error}>{state.message}</p>}
         <fieldset disabled={pending} className={styles.fieldGrid}>
-          {solo ? <input type="hidden" name="professional" value={solo.id} /> : <div className={styles.field}>
-            <label htmlFor="appointment-professional">Profissional</label>
-            <select id="appointment-professional" name="professional" required value={professional} onChange={(event) => {
-              setProfessional(event.currentTarget.value);
-              setService("");
-            }}>
-              <option value="">Selecione o profissional</option>
-              {professionals.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
-            </select>
-          </div>}
           <div className={styles.field}>
             <label htmlFor="appointment-service">Serviço</label>
             <select id="appointment-service" name="service" required value={service} onChange={(event) => setService(event.currentTarget.value)}>
-              <option value="">{professional ? "Selecione o serviço" : "Selecione o profissional primeiro"}</option>
+              <option value="">Selecione o serviço</option>
               {services.map(({ id, name, duration_minutes }) => <option key={id} value={id}>{name} · {duration_minutes} min</option>)}
             </select>
           </div>
